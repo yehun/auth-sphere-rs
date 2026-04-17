@@ -54,9 +54,9 @@ service.interceptors.response.use(
         
         // 根据用户类型跳转到对应的登录页面
         if (userKind) {
-          window.location.href = `/login/${userKind}`
+          window.location.href = `/#/login/${userKind}`
         } else {
-          window.location.href = '/'
+          window.location.href = '/#/'
         }
       }
       
@@ -67,6 +67,29 @@ service.interceptors.response.use(
   },
   (error) => {
     console.error('[Response Error]', error)
+    
+    // 处理 HTTP 401 状态码
+    if (error.response && error.response.status === 401) {
+      const userKind = localStorage.getItem('user_kind')
+      
+      // 清除所有认证信息
+      localStorage.removeItem('token')
+      localStorage.removeItem('user_kind')
+      localStorage.removeItem('user_info')
+      localStorage.removeItem('device_type')
+      
+      console.log('[401 Handler] Cleared auth data, user_kind:', userKind)
+      
+      // 根据用户类型跳转到对应的登录页面
+      if (userKind) {
+        window.location.href = `/#/login/${userKind}`
+      } else {
+        window.location.href = '/#/'
+      }
+      
+      return Promise.reject(error)
+    }
+    
     if (error.response) {
       // 服务器返回了错误状态码
       console.error('Status:', error.response.status)

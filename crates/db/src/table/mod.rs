@@ -17,3 +17,5 @@ pub mod user_session;
 mod user_session_impl;
 pub mod user_mfa;
 mod user_mfa_impl;
+mod user_passkey;
+mod user_passkey_impl;

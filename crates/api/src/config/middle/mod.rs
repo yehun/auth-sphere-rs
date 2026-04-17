@@ -1,4 +1,5 @@
 pub mod db;
 pub mod redis;
-pub(crate) mod mfa;
+pub mod mfa;
+pub mod webauthn;
 

@@ -2,6 +2,7 @@ mod user;
 mod otp;
 mod login;
 mod mfa;
+mod passkey;
 
 use actix_http::body::MessageBody;
 use actix_web::web;

@@ -12,6 +12,9 @@ run:
 build:
 	cargo build -p auth-sphere-api
 
+build-web:
+	cd web && npm run build
+
 build-release:
 	cargo build --release -p auth-sphere-api
 clean:

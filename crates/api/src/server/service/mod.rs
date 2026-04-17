@@ -7,6 +7,9 @@ pub use auth::AuthService;
 pub mod user;
 pub use user::UserService;
 
+mod passkey;
+pub use passkey::UserPassKeyService;
+
 use auth_sphere_db::table::user::UserKind;
 use auth_sphere_db::table::user_session::UserDevice;
 
