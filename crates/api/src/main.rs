@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
     let _guard = config::init(command.config);
     
     let db = middle::db::init().await;
-    let redis = middle::redis::init();
+    let redis = middle::redis::init().await;
     let webauthn = middle::webauthn::init();
     let mfa_config = middle::mfa::init();
     let mfa_service = Arc::new(UserMfaService::new(

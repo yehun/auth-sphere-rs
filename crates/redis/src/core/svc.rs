@@ -48,7 +48,7 @@ impl RedisService {
         Ok(self.client.get_multiplexed_async_connection().await?)
     }
 
-    async fn is_open(&self) -> Result<bool, RedisServiceError> {
+    pub async fn is_open(&self) -> Result<bool, RedisServiceError> {
         Ok(self.client.get_connection()?.is_open())
     }
 

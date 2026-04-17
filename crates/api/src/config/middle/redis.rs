@@ -1,7 +1,7 @@
 use crate::config::application;
 use lib_redis::{RedisService, RedisServiceOpt};
 
-pub fn init() -> RedisService {
+pub async fn init() -> RedisService {
     let config = application::get();
     let opt = RedisServiceOpt {
         host: config.redis.host,
@@ -10,5 +10,9 @@ pub fn init() -> RedisService {
         password: config.redis.auth,
         timeout: config.redis.timeout,
     };
-    RedisService::from_opt(opt).expect("redis init error")
+    let client = RedisService::from_opt(opt).expect("redis init error");
+    if !client.is_open().await.expect("redis connect error") {
+        panic!("redis connect error");
+    }
+    client
 }
