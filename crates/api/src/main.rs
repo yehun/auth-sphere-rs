@@ -39,15 +39,13 @@ async fn main() -> Result<()> {
     let auth_service = Arc::new(AuthService::new(db.clone(), redis.clone()));
     let user_service = Arc::new(UserService::new(db.clone(), redis.clone()));
     let passkey_service = Arc::new(UserPassKeyService::new(
-        db.clone(),
+        db,
         redis.clone(),
-        webauthn.clone()
+        webauthn
     ));
 
     let web_server = server::init(config::AppState {
-        db,
         redis,
-        webauthn,
         mfa_config,
         mfa_service,
         auth_service,

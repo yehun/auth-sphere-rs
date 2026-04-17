@@ -59,25 +59,5 @@ pub async fn assets(req: actix_web::HttpRequest) -> Result<NamedFile, Error> {
         }))
 }
 
-/// SPA 回退处理器 - 所有非 API 路由都返回 index.html
-pub async fn spa_fallback() -> impl Responder {
-    let dist_dir = get_frontend_dist_dir();
-    let index_path = PathBuf::from(&dist_dir).join("index.html");
-    let (
-        mut builder,
-        content_type,
-        html
-    ) = NamedFile::open(&index_path).map(|mut file| {
-        let mut text = String::new();
-        file.read_to_string(&mut text).map(|_n| (
-            HttpResponse::Ok(),
-            "text/html; charset=utf-8",
-            text
-        ))
-    }).flatten().unwrap_or((
-        HttpResponse::NotFound(),
-        "text/plain; charset=utf-8",
-        WEB_NOT_BUILD.to_string()
-    ));
-    builder.content_type(content_type).body(html)
-}
+
+

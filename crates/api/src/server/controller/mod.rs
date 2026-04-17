@@ -2,12 +2,13 @@ use actix_http::body::BoxBody;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::{web, Error, HttpResponse};
 
-mod home;
+// mod home;
 mod member;
 mod community;
 mod platform;
 mod helper;
 mod base;
+mod page;
 
 pub(super) fn handler_response(req: ServiceRequest, message: &str) -> Result<ServiceResponse<BoxBody>, Error> {
     let resp = HttpResponse::Unauthorized().json(serde_json::json!({
@@ -20,11 +21,12 @@ pub(super) fn handler_response(req: ServiceRequest, message: &str) -> Result<Ser
 }
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    {
-        cfg.route("/", web::get().to(home::index));
-        cfg.route("/assets/{filename:.*}", web::get().to(home::assets));
-    }
     member::init(cfg);
     community::init(cfg);
     platform::init(cfg);
+
+    cfg.route("/", web::get().to(page::index));
+    cfg.route("/assets/{filename:.*}", web::get().to(page::assets));
+    // cfg.route("/", web::get().to(home::index));
+    // cfg.route("/assets/{filename:.*}", web::get().to(home::assets));
 }

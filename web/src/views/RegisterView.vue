@@ -22,7 +22,7 @@
         <el-form-item prop="nickname">
           <el-input 
             v-model="registerForm.nickname" 
-            placeholder="昵称（1-5位）"
+            placeholder="昵称（3-20位）"
             prefix-icon="User"
             size="large"
             minlength="3"
