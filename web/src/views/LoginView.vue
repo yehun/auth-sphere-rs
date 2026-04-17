@@ -2,10 +2,6 @@
   <div class="login-container">
     <el-card class="login-card">
       <div class="login-header">
-        <el-button text @click="goHome" class="back-btn">
-          <el-icon><ArrowLeft /></el-icon>
-          返回首页
-        </el-button>
         <h1>{{ subjectName }}登录</h1>
         <p class="subtitle">选择您的登录方式</p>
       </div>
@@ -146,7 +142,14 @@
       </el-tabs>
 
       <div class="login-footer">
-        <p>还没有账号？ <router-link to="/register">立即注册</router-link></p>
+        <div class="footer-links">
+          <el-button text @click="goHome" class="back-link">
+            <el-icon><ArrowLeft /></el-icon>
+            返回首页
+          </el-button>
+          <span class="divider">|</span>
+          <p>还没有账号？ <router-link to="/register">立即注册</router-link></p>
+        </div>
       </div>
     </el-card>
 
@@ -554,14 +557,6 @@ onMounted(() => {
   margin-bottom: 30px;
 }
 
-.back-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  font-size: 16px;
-  background: #40A1D7;
-}
-
 .login-header h1 {
   font-size: 32px;
   color: #2d3748;
@@ -602,6 +597,37 @@ onMounted(() => {
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #e2e8f0;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.back-link {
+  color: #667eea;
+  font-size: 14px;
+  padding: 4px 8px;
+  transition: all 0.3s ease;
+}
+
+.back-link:hover {
+  color: #764ba2;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 4px;
+}
+
+.divider {
+  color: #cbd5e0;
+  font-size: 14px;
+}
+
+.login-footer p {
+  margin: 0;
+  color: #718096;
+  font-size: 14px;
 }
 
 .login-footer a {

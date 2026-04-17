@@ -20,7 +20,7 @@ pub async fn me(
         None => return ResponseResult::<()>::fail_with_message("未提供认证令牌").response(),
     };
 
-    match state.user_service.current_user(UserKind::Platform, token).await {
+    match state.user_service.current_user(&UserKind::Platform, token).await {
         Ok(session) => ResponseResult::success_with_data(session).response(),
         Err(e) => {
             error!("Verify token failed: {}", e);

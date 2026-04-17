@@ -18,12 +18,14 @@ impl UserService {
         }
     }
 
-
     pub async fn get_user(&self, user_kind: UserKind, user_id: UserId) -> anyhow::Result<User> {
         let mut conn = self.db.acquire().await?;
         let Some(user) = User::get(&mut conn, user_id).await? else {
             return Err(anyhow::anyhow!("用户不存在"));
         };
+        if user.kind != user_kind as u8 {
+            return Err(anyhow::anyhow!("用户类型不匹配"));
+        }
         Ok(user)
     }
 
@@ -31,20 +33,18 @@ impl UserService {
     pub async fn get_by_username(&self, user_kind: UserKind, username: &str) -> anyhow::Result<Option<User>> {
         let mut conn = self.db.acquire().await?;
         let user = User::get_by_username(&mut conn, username).await?;
-        
         // 验证用户类型是否匹配
         if let Some(ref user) = user {
             if user.kind != user_kind as u8 {
                 return Err(anyhow::anyhow!("用户类型不匹配"));
             }
         }
-        
         Ok(user)
     }
 
     /// 获取当前用户信息
-    pub async fn current_user(&self, user_kind: UserKind, token: &str) -> anyhow::Result<UserInfo> {
-        let login_key = super::generate_login_key(&user_kind, token);
+    pub async fn current_user(&self, user_kind: &UserKind, token: &str) -> anyhow::Result<UserInfo> {
+        let login_key = super::generate_login_key(user_kind, token);
         let value = self.redis.get(&login_key).await?;
         let session = Session::try_from(value)?;
         let mut conn = self.db.acquire().await?;

@@ -18,7 +18,7 @@ pub async fn info(
             return ResponseResult::<()>::fail_with_message("请先登陆").response();
         },
     };
-    match state.user_service.current_user(UserKind::Member, token).await {
+    match state.user_service.current_user(&UserKind::Member, token).await {
         Ok(user_info) => ResponseResult::success_with_data(user_info).response(),
         Err(e) => {
             error!("Get current user failed: {}", e);

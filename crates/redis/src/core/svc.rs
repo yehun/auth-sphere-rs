@@ -78,6 +78,12 @@ impl RedisService {
         Ok(deleted > 0)
     }
 
+    pub async fn deletes(&self, keys: &[&String; 2]) -> Result<bool, RedisServiceError> {
+        let mut conn = self.get_connection().await?;
+        let deleted: i32 = conn.del(keys).await?;
+        Ok(deleted > 0)
+    }
+
     pub async fn exists(&self, key: &str) -> Result<bool, RedisServiceError> {
         let mut conn = self.get_connection().await?;
         let exists: bool = conn.exists(key).await?;

@@ -4,8 +4,8 @@ use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, Responder};
 use serde::Serialize;
 
-#[derive(Clone, Debug, Serialize)]
-pub struct ResponseResult<T: Clone> {
+#[derive(Debug, Serialize)]
+pub struct ResponseResult<T> {
     #[serde(rename = "code")]
     code: i32,
 
@@ -18,7 +18,7 @@ pub struct ResponseResult<T: Clone> {
 
 impl<T> Responder for ResponseResult<T>
 where
-    T: Clone + Default + Serialize,
+    T: Default + Serialize,
 {
     type Body = BoxBody;
 
@@ -36,7 +36,7 @@ where
 
 impl<T> ResponseResult<T>
 where
-    T: Clone + Default + Serialize
+    T: Serialize
 {
     pub fn json(&self) -> serde_json::Result<String> {
         serde_json::to_string(self)
@@ -61,8 +61,6 @@ where
 
 #[allow(dead_code)]
 impl<T> ResponseResult<T>
-where
-    T: Clone
 {
     pub fn success() -> ResponseResult<T> {
         Self::success_with_message("success")

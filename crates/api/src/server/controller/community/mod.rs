@@ -23,7 +23,7 @@ async fn auth_middleware(
     let Some(state) = req.app_data::<web::Data<AppState>>() else {
         return handler_response(req, "获取应用状态失败");
     };
-    let Ok(user) = state.user_service.current_user(UserKind::Community, &auth.0).await else {
+    let Ok(user) = state.user_service.current_user(&UserKind::Community, &auth.0).await else {
         return handler_response(req, "错误的认证令牌");
     };
     if user.user_type != UserKind::Community {
@@ -42,7 +42,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             .route("/login/2fa", web::post().to(login::login_with_2fa))
             .route("/otp/send", web::post().to(otp::send))
             .route("/otp/login", web::post().to(otp::login))
-            // Passkey 路由（公开）
             .route("/passkey/register/begin", web::post().to(passkey::register_begin))
             .route("/passkey/register/complete", web::post().to(passkey::register_complete))
             .route("/passkey/login/begin", web::post().to(passkey::login_begin))

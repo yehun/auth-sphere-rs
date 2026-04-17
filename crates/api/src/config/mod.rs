@@ -7,10 +7,7 @@ pub use state::AppState;
 
 use std::path::PathBuf;
 
-pub use application::{
-    ApplicationConfig,
-    get as get_application,
-};
+pub use application::get as get_application;
 
 pub fn init(config_path: PathBuf) -> Option<tracing_appender::non_blocking::WorkerGuard> {
     let config = application::init(config_path);

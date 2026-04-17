@@ -4,17 +4,17 @@ mod login;
 mod mfa;
 mod passkey;
 
-use actix_http::body::MessageBody;
-use actix_web::web;
-use actix_web::{dev::ServiceRequest, Error, HttpResponse};
-use actix_web::dev::ServiceResponse;
-use actix_web::middleware::{from_fn, Next};
-use auth_sphere_db::table::user::UserKind;
 use crate::config::AppState;
 use crate::server::middleware::Authorization;
+use actix_http::body::MessageBody;
+use actix_web::dev::ServiceResponse;
+use actix_web::middleware::{from_fn, Next};
+use actix_web::web;
+use actix_web::{dev::ServiceRequest, Error};
+use auth_sphere_db::table::user::UserKind;
 
-use actix_web::body::BoxBody;
 use crate::server::controller::handler_response;
+use actix_web::body::BoxBody;
 
 async fn auth_middleware(
     req: ServiceRequest,
@@ -26,7 +26,7 @@ async fn auth_middleware(
     let Some(state) = req.app_data::<web::Data<AppState>>() else {
         return handler_response(req, "获取应用状态失败");
     };
-    let Ok(user) = state.user_service.current_user(UserKind::Member, &auth.0).await else {
+    let Ok(user) = state.user_service.current_user(&UserKind::Member, &auth.0).await else {
         return handler_response(req, "错误的认证令牌");
     };
     if user.user_type != UserKind::Member {

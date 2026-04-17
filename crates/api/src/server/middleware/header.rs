@@ -5,7 +5,7 @@ use actix_web::{
     dev::{self, ServiceResponse},
     middleware::{Next}
 };
-use tracing::{debug, span, Level};
+use tracing::debug;
 use crate::server::middleware::{Authorization, DeviceType};
 
 

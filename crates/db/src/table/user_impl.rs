@@ -3,7 +3,7 @@ use tracing::debug;
 use lib_sqlx::{PaginatedParam, Param};
 use crate::base::Repository;
 use crate::core::DatabaseExecutor;
-use crate::table::user::{User, UserId, UserInsert, UserKind, UserPageResult, UserPageSearch, UserRepository, UserSearch, UserStatus, UserUpdateInfo, UserUpdatePassword};
+use crate::table::user::{User, UserId, UserInsert, UserKind, UserPageResult, UserPageSearch, UserRepository, UserSearch, UserStatus, UserUpdateInfo};
 
 impl From<UserKind> for Param {
     fn from(value: UserKind) -> Self {

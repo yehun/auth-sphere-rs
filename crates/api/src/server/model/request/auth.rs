@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
+use webauthn_rs::prelude::{PublicKeyCredential, RegisterPublicKeyCredential};
 
 /// 会员登录请求
 #[derive(Debug, Clone, Validate, Deserialize, Serialize)]
@@ -80,7 +81,7 @@ pub struct PasskeyRegisterBeginRequest {
 #[derive(Debug, Clone, Validate, Deserialize, Serialize)]
 pub struct PasskeyRegisterCompleteRequest {
     pub username: String,
-    pub credential: serde_json::Value,
+    pub credential: RegisterPublicKeyCredential,
 }
 
 /// Passkey 登录开始请求
@@ -94,5 +95,5 @@ pub struct PasskeyLoginBeginRequest {
 #[derive(Debug, Clone, Validate, Deserialize, Serialize)]
 pub struct PasskeyLoginCompleteRequest {
     pub username: String,
-    pub credential: serde_json::Value,
+    pub credential: PublicKeyCredential
 }

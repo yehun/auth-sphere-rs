@@ -1,3 +1,4 @@
+use std::io::Read;
 use actix_web::{Error, HttpResponse, Responder};
 use actix_files::NamedFile;
 use std::path::PathBuf;
@@ -32,15 +33,13 @@ fn get_frontend_dist_dir() -> String {
 pub async fn index() -> impl Responder {
     let dist_dir = get_frontend_dist_dir();
     let index_path = PathBuf::from(&dist_dir).join("index.html");
-
-    match NamedFile::open(&index_path) {
-        Ok(file) => HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(std::fs::read_to_string(&index_path).unwrap_or_default()),
-        Err(_) => HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(WEB_NOT_BUILD)
-    }
+    let html = NamedFile::open(&index_path).map(|mut file| {
+        let mut text = String::new();
+        file.read_to_string(&mut text).map(|_n| text)
+    }).flatten().unwrap_or(WEB_NOT_BUILD.to_string());
+    HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(html)
 }
 
 
@@ -64,13 +63,21 @@ pub async fn assets(req: actix_web::HttpRequest) -> Result<NamedFile, Error> {
 pub async fn spa_fallback() -> impl Responder {
     let dist_dir = get_frontend_dist_dir();
     let index_path = PathBuf::from(&dist_dir).join("index.html");
-    
-    match NamedFile::open(&index_path) {
-        Ok(file) => HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(std::fs::read_to_string(&index_path).unwrap_or_default()),
-        Err(_) => HttpResponse::NotFound()
-            .content_type("text/plain; charset=utf-8")
-            .body("Page not found")
-    }
+    let (
+        mut builder,
+        content_type,
+        html
+    ) = NamedFile::open(&index_path).map(|mut file| {
+        let mut text = String::new();
+        file.read_to_string(&mut text).map(|_n| (
+            HttpResponse::Ok(),
+            "text/html; charset=utf-8",
+            text
+        ))
+    }).flatten().unwrap_or((
+        HttpResponse::NotFound(),
+        "text/plain; charset=utf-8",
+        WEB_NOT_BUILD.to_string()
+    ));
+    builder.content_type(content_type).body(html)
 }

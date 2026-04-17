@@ -12,7 +12,7 @@ use uuid::Uuid;
 use std::time::Duration;
 use lib_redis::RedisService;
 use lib_sqlx::sqlx::Acquire;
-use crate::server::model::response::auth::{LoginResponse, UserInfo, OtpSendResponse, RegisterResponse, LoginMfaResponse};
+use crate::server::model::response::auth::{LoginResponse, UserInfo, OtpSendResponse, RegisterResponse};
 use crate::server::service::LoginType;
 
 /// 会话信息
@@ -42,8 +42,6 @@ impl Session {
 pub struct AuthService {
     db: DatabasePool,
     redis: RedisService,
-    // token_store: TokenStore,
-    // otp_store: Arc<RwLock<HashMap<String, String>>>, // key: contact, value: otp_code
 }
 
 impl AuthService {
@@ -51,8 +49,6 @@ impl AuthService {
         Self {
             db,
             redis,
-            // token_store: Arc::new(RwLock::new(HashMap::new())),
-            // otp_store: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
