@@ -125,13 +125,15 @@ export function refreshToken(
 /**
  * 生成 MFA 二维码
  */
-export function generateMfaQRCode(): Promise<{
+export function generateMfaQRCode(
+  userKind: UserKind
+): Promise<{
   code: number;
   message: string;
   data: { qr_code: string; secret: string, uri: string }
 }> {
   return request({
-    url: '/member/mfa/generate',
+    url: `/${userKind}/mfa/generate`,
     method: 'post'
   }).then((res) => res.data)
 }
@@ -139,9 +141,12 @@ export function generateMfaQRCode(): Promise<{
 /**
  * 激活 MFA
  */
-export function activateMfa(otp_code: string): Promise<{ code: number; message: string; data: any }> {
+export function activateMfa(
+  userKind: UserKind,
+  otp_code: string
+): Promise<{ code: number; message: string; data: any }> {
   return request({
-    url: '/member/mfa/active',
+    url: `/${userKind}/mfa/active`,
     method: 'post',
     data: { otp_code }
   }).then((res) => res.data)
@@ -150,9 +155,11 @@ export function activateMfa(otp_code: string): Promise<{ code: number; message: 
 /**
  * 停用 MFA
  */
-export function deactivateMfa(): Promise<{ code: number; message: string; data: any }> {
+export function deactivateMfa(
+  userKind: UserKind
+): Promise<{ code: number; message: string; data: any }> {
   return request({
-    url: '/member/mfa/deactive',
+    url: `/${userKind}/mfa/deactive`,
     method: 'post'
   }).then((res) => res.data)
 }

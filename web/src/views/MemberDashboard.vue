@@ -108,7 +108,11 @@
       <el-divider />
 
       <div class="actions-section">
-        <el-button type="danger" size="large" @click="handleLogout" style="width: 100%">
+        <el-button size="large" @click="handleGoHome" style="margin-right: 10px">
+          <el-icon><HomeFilled /></el-icon>
+          返回首页
+        </el-button>
+        <el-button type="danger" size="large" @click="handleLogout">
           <el-icon><SwitchButton /></el-icon>
           退出登录
         </el-button>
@@ -184,7 +188,7 @@ async function handleEnableMfa() {
     mfaLoading.value = true
     
     // 获取二维码
-    const response = await generateMfaQRCode()
+    const response = await generateMfaQRCode(UserKind.Member)
     const { qr_code, secret, uri } = response.data
     
     // 显示二维码弹窗
@@ -205,7 +209,7 @@ async function handleEnableMfa() {
     )
     
     // 用户确认后，请求激活 MFA（这里简化处理，实际应该让用户输入验证码）
-    await activateMfa('') // TODO: 需要用户输入 OTP 验证码
+    await activateMfa(UserKind.Member, '') // TODO: 需要用户输入 OTP 验证码
     
     mfaEnabled.value = true
     ElMessage.success('MFA 已开启')
@@ -234,7 +238,7 @@ async function handleDisableMfa() {
     )
     
     mfaLoading.value = true
-    await deactivateMfa()
+    await deactivateMfa(UserKind.Member)
     
     mfaEnabled.value = false
     ElMessage.success('MFA 已关闭')
@@ -247,6 +251,11 @@ async function handleDisableMfa() {
   } finally {
     mfaLoading.value = false
   }
+}
+
+// 返回首页
+function handleGoHome() {
+  router.push('/')
 }
 
 async function handleLogout() {

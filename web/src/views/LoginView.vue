@@ -441,11 +441,24 @@ async function handlePasskeyLogin() {
     
     console.log('[Passkey] Login challenge received:', response)
     
+    // 检查是否返回了错误（用户未启用 Passkey）
+    if (response.code && response.code !== 200 && response.code !== 0) {
+      ElMessage.error(response.message || '该用户未启用 Passkey，请使用密码登录')
+      return
+    }
+    
     // webauthn-rs 返回的格式是 { publicKey: {...} } (注册) 或 { publicKey: {...} } (登录)
     // @simplewebauthn/browser 需要直接使用 publicKey 的内容
     const options = response.publicKey || response
     
     console.log('[Passkey] Using options:', options)
+    
+    // 检查 options 是否有效
+    if (!options || !options.challenge) {
+      console.error('[Passkey] Invalid challenge object:', options)
+      ElMessage.error('获取挑战失败，请重试')
+      return
+    }
     
     // 2. 调用浏览器 WebAuthn API 进行认证
     const credential = await startAuthentication(options)
@@ -479,6 +492,8 @@ async function handlePasskeyLogin() {
     console.error('Passkey login error:', error)
     if (error.name === 'NotAllowedError') {
       ElMessage.error('用户取消了认证或超时')
+    } else if (error.message && error.message.includes('allowCredentials')) {
+      ElMessage.error('该用户未启用 Passkey，请使用密码登录')
     } else {
       ElMessage.error(error.message || 'Passkey 登录失败')
     }

@@ -1,6 +1,7 @@
 mod login;
 mod user;
 mod otp;
+mod mfa;
 mod passkey;
 
 use actix_http::body::{BoxBody, MessageBody};
@@ -18,7 +19,7 @@ async fn auth_middleware(
     let Some(auth) = Authorization::get(&req) else {
         return handler_response(req, "未提供认证令牌");
     };
-    let Some(state) = req.app_data::<AppState>() else {
+    let Some(state) = req.app_data::<web::Data<AppState>>() else {
         return handler_response(req, "获取应用状态失败");
     };
     let Ok(user) = state.user_service.current_user(UserKind::Platform, &auth.0).await else {
@@ -35,10 +36,11 @@ pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/platform")
             .route("/login", web::post().to(login::login_with_password))
+            .route("/login/2fa", web::post().to(login::login_with_2fa))
             .route("/register", web::post().to(login::register))
             .route("/otp/send", web::post().to(otp::send))
             .route("/otp/login", web::post().to(otp::login))
-            // Passkey 路由
+            // Passkey 路由（公开）
             .route("/passkey/register/begin", web::post().to(passkey::register_begin))
             .route("/passkey/register/complete", web::post().to(passkey::register_complete))
             .route("/passkey/login/begin", web::post().to(passkey::login_begin))
@@ -48,6 +50,10 @@ pub fn init(cfg: &mut web::ServiceConfig) {
                     .wrap(from_fn(auth_middleware))
                     .route("/logout", web::post().to(login::logout))
                     .route("/info", web::get().to(user::me))
+                    .route("/mfa/generate", web::post().to(mfa::generate))
+                    .route("/mfa/active", web::post().to(mfa::active))
+                    .route("/mfa/deactive", web::post().to(mfa::deactive))
+                    .route("/passkey/deactive", web::post().to(passkey::deactive))
             )
     );
 }
