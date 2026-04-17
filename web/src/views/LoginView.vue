@@ -120,21 +120,27 @@
             <el-icon :size="80" color="#409EFF"><Key /></el-icon>
             <h3>使用 Passkey 登录</h3>
             <p>更安全、更便捷的无密码登录方式</p>
-            <el-button 
-              type="primary" 
-              size="large" 
-              :loading="loading"
-              @click="handlePasskeyLogin"
-              style="margin-top: 20px"
-            >
-              使用 Passkey 登录
-            </el-button>
-            <el-alert 
-              title="Passkey 功能开发中" 
-              type="info" 
-              :closable="false"
-              style="margin-top: 20px"
-            />
+            
+            <el-form :model="passkeyForm" ref="passkeyFormRef" class="passkey-form">
+              <el-form-item prop="username">
+                <el-input 
+                  v-model="passkeyForm.username" 
+                  placeholder="用户名"
+                  prefix-icon="User"
+                  size="large"
+                />
+              </el-form-item>
+              
+              <el-button 
+                type="primary" 
+                size="large" 
+                :loading="loading"
+                @click="handlePasskeyLogin"
+                style="width: 100%; margin-top: 20px"
+              >
+                使用 Passkey 登录
+              </el-button>
+            </el-form>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -184,8 +190,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { passwordLogin, otpLogin, sendOtp, verify2FA } from '@/api/auth'
+import { passwordLogin, otpLogin, sendOtp, verify2FA, passkeyLoginBegin, passkeyLoginComplete } from '@/api/auth'
 import { UserKind, DeviceType, LoginResponse } from '@/types'
+import { startAuthentication } from '@simplewebauthn/browser'
 
 const router = useRouter()
 const route = useRoute()
@@ -241,6 +248,12 @@ const otpRules: FormRules = {
     { pattern: /^\d{6}$/, message: '验证码必须为6位数字', trigger: 'blur' }
   ]
 }
+
+// Passkey 登录表单
+const passkeyFormRef = ref<FormInstance>()
+const passkeyForm = ref({
+  username: ''
+})
 
 // 监听设备类型变化，立即保存到 localStorage
 watch(
@@ -410,9 +423,68 @@ async function handleOtpLogin() {
   })
 }
 
-// Passkey 登录(待实现)
-function handlePasskeyLogin() {
-  ElMessage.info('Passkey 功能开发中')
+// Passkey 登录
+async function handlePasskeyLogin() {
+  if (!passkeyFormRef.value) return
+  
+  if (!passkeyForm.value.username) {
+    ElMessage.error('请输入用户名')
+    return
+  }
+  
+  loading.value = true
+  try {
+    // 1. 开始 Passkey 登录流程，获取挑战
+    const response = await passkeyLoginBegin(userKind.value, {
+      username: passkeyForm.value.username
+    })
+    
+    console.log('[Passkey] Login challenge received:', response)
+    
+    // webauthn-rs 返回的格式是 { publicKey: {...} } (注册) 或 { publicKey: {...} } (登录)
+    // @simplewebauthn/browser 需要直接使用 publicKey 的内容
+    const options = response.publicKey || response
+    
+    console.log('[Passkey] Using options:', options)
+    
+    // 2. 调用浏览器 WebAuthn API 进行认证
+    const credential = await startAuthentication(options)
+    console.log('[Passkey] Authentication completed:', credential)
+    
+    // 3. 完成 Passkey 登录
+    const completeResponse = await passkeyLoginComplete(userKind.value, {
+      username: passkeyForm.value.username,
+      credential: credential
+    })
+    
+    console.log('[Passkey] Login complete response:', completeResponse)
+    
+    if (completeResponse.code !== 200 && completeResponse.code !== 0) {
+      ElMessage.error(completeResponse.message || 'Passkey 登录失败')
+      return
+    }
+    
+    // 4. 保存设备类型到 localStorage
+    localStorage.setItem('device_type', DeviceType.Web)
+    
+    // 5. 保存登录信息并跳转
+    console.log('[Passkey] Setting login info:', completeResponse.data)
+    userStore.setLoginInfo(completeResponse.data, userKind.value)
+    ElMessage.success('Passkey 登录成功')
+    
+    const dashboardPath = getDashboardPath(userKind.value)
+    console.log('[Passkey] Redirecting to:', dashboardPath)
+    router.push(dashboardPath)
+  } catch (error: any) {
+    console.error('Passkey login error:', error)
+    if (error.name === 'NotAllowedError') {
+      ElMessage.error('用户取消了认证或超时')
+    } else {
+      ElMessage.error(error.message || 'Passkey 登录失败')
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 // 根据用户类型获取对应的 Dashboard 路径

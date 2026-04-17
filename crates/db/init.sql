@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS user (
     nickname VARCHAR(32) NOT NULL,
     username VARCHAR(32) NOT NULL UNIQUE,
     is_mfa INTEGER CHECK (is_mfa IN (0, 1))  DEFAULT 0,
+    is_passkey INTEGER CHECK (is_passkey IN (0, 1))  DEFAULT 0,
     status INTEGER NOT NULL DEFAULT 1,
     create_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     update_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -100,3 +101,19 @@ CREATE TABLE IF NOT EXISTS user_mfa (
 CREATE INDEX IF NOT EXISTS idx_user_mfa_user_id ON user_mfa(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_mfa_secret ON user_mfa(secret);
 CREATE INDEX IF NOT EXISTS idx_user_mfa_deleted ON user_mfa(deleted);
+
+
+CREATE TABLE IF NOT EXISTS user_passkey (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    credential_id VARCHAR(256) NOT NULL UNIQUE,
+    public_key TEXT NOT NULL,
+    sign_count INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    create_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_user_passkey_user_id ON user_passkey(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_passkey_credential_id ON user_passkey(credential_id);
+CREATE INDEX IF NOT EXISTS idx_user_passkey_deleted ON user_passkey(deleted);

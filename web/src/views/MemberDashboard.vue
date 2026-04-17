@@ -69,6 +69,44 @@
 
       <el-divider />
 
+      <div class="passkey-section">
+        <h2>Passkey 无密码登录</h2>
+        <div class="passkey-control">
+          <span class="passkey-label">已注册的 Passkey</span>
+          <el-tag :type="hasPasskey ? 'success' : 'info'" size="large">
+            {{ hasPasskey ? '已启用' : '未注册' }}
+          </el-tag>
+        </div>
+        <p class="passkey-description">
+          Passkey 提供比密码更安全、更便捷的登录体验，支持指纹、面部识别等生物认证
+        </p>
+        <div class="passkey-actions">
+          <el-button 
+            type="primary" 
+            size="large" 
+            @click="handleRegisterPasskey"
+            :loading="passkeyLoading"
+            :disabled="hasPasskey"
+            style="margin-right: 10px"
+          >
+            <el-icon><Key /></el-icon>
+            {{ hasPasskey ? '已注册 Passkey' : '注册 Passkey' }}
+          </el-button>
+          <el-button 
+            type="danger" 
+            size="large" 
+            @click="handleDeactivatePasskey"
+            :loading="passkeyLoading"
+            :disabled="!hasPasskey"
+          >
+            <el-icon><Close /></el-icon>
+            关闭 Passkey
+          </el-button>
+        </div>
+      </div>
+
+      <el-divider />
+
       <div class="actions-section">
         <el-button type="danger" size="large" @click="handleLogout" style="width: 100%">
           <el-icon><SwitchButton /></el-icon>
@@ -85,7 +123,8 @@ import {useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {useUserStore} from '@/stores/user'
 import {UserKind} from '@/types'
-import {activateMfa, deactivateMfa, generateMfaQRCode, getCurrentUser} from '@/api/auth'
+import {activateMfa, deactivateMfa, generateMfaQRCode, getCurrentUser, passkeyRegisterBegin, passkeyRegisterComplete, deactivatePasskey} from '@/api/auth'
+import {startRegistration} from '@simplewebauthn/browser'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -94,6 +133,8 @@ const subjectName = computed(() => '会员')
 const mfaEnabled = ref(false)
 const mfaLoading = ref(false)
 const loadingUserInfo = ref(false)
+const hasPasskey = ref(false)
+const passkeyLoading = ref(false)
 
 // 获取用户信息
 async function fetchUserInfo() {
@@ -112,6 +153,10 @@ async function fetchUserInfo() {
     
     // 根据用户信息更新 MFA 开关状态
     mfaEnabled.value = response.data.is_mfa
+    
+    // 根据用户信息更新 Passkey 状态
+    // TODO: 需要在 User 类型中添加 is_passkey 字段
+    hasPasskey.value = response.data.is_passkey || false
     
     console.log('[MemberDashboard] User info fetched:', response.data)
   } catch (error) {
@@ -219,6 +264,102 @@ async function handleLogout() {
     if (error !== 'cancel') {
       console.error('Logout error:', error)
     }
+  }
+}
+
+// 注册 Passkey
+async function handleRegisterPasskey() {
+  if (!userStore.userInfo) {
+    ElMessage.error('用户信息不存在')
+    return
+  }
+  
+  try {
+    passkeyLoading.value = true
+    
+    // 1. 开始 Passkey 注册流程
+    const response = await passkeyRegisterBegin(UserKind.Member, {
+      username: userStore.userInfo.username
+    })
+    
+    console.log('[Passkey] Registration challenge received:', response)
+    
+    // webauthn-rs 返回的格式是 { publicKey: {...} }
+    // @simplewebauthn/browser 需要直接使用 publicKey 的内容
+    const options = response.publicKey || response
+    
+    console.log('[Passkey] Using options:', options)
+    console.log('[Passkey] Challenge type:', typeof options)
+    console.log('[Passkey] Challenge keys:', Object.keys(options || {}))
+    
+    if (!options || !options.challenge) {
+      console.error('[Passkey] Invalid challenge object:', options)
+      ElMessage.error('获取挑战失败，请重试')
+      return
+    }
+    
+    // 2. 调用浏览器 WebAuthn API 进行注册
+    const credential = await startRegistration(options)
+    console.log('[Passkey] Registration completed:', credential)
+    
+    // 3. 完成 Passkey 注册
+    const completeResponse = await passkeyRegisterComplete(UserKind.Member, {
+      username: userStore.userInfo.username,
+      credential
+    })
+    
+    if (completeResponse.code !== 200 && completeResponse.code !== 0) {
+      ElMessage.error(completeResponse.message || 'Passkey 注册失败')
+      return
+    }
+    
+    hasPasskey.value = true
+    ElMessage.success('Passkey 注册成功！现在您可以使用 Passkey 无密码登录了')
+  } catch (error: any) {
+    console.error('Passkey registration error:', error)
+    if (error.name === 'NotAllowedError') {
+      ElMessage.warning('用户取消了 Passkey 注册')
+    } else {
+      ElMessage.error(error.message || 'Passkey 注册失败')
+    }
+  } finally {
+    passkeyLoading.value = false
+  }
+}
+
+// 关闭 Passkey
+async function handleDeactivatePasskey() {
+  try {
+    await ElMessageBox.confirm(
+      '关闭 Passkey 后，您将无法使用生物识别登录。确定要关闭吗？',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    passkeyLoading.value = true
+    const response = await deactivatePasskey(UserKind.Member)
+    
+    if (response.code !== 200 && response.code !== 0) {
+      ElMessage.error(response.message || '关闭 Passkey 失败')
+      return
+    }
+    
+    hasPasskey.value = false
+    ElMessage.success('Passkey 已关闭')
+    
+    // 重新获取用户信息
+    await fetchUserInfo()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Deactivate Passkey error:', error)
+      ElMessage.error(error.message || '关闭 Passkey 失败')
+    }
+  } finally {
+    passkeyLoading.value = false
   }
 }
 
@@ -340,6 +481,40 @@ onMounted(() => {
   font-size: 14px;
   color: #718096;
   margin: 0;
+}
+
+.passkey-section h2 {
+  font-size: 24px;
+  color: #2d3748;
+  margin-bottom: 20px;
+}
+
+.passkey-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  background: #f7fafc;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.passkey-label {
+  font-size: 16px;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.passkey-description {
+  font-size: 14px;
+  color: #718096;
+  margin: 0;
+}
+
+.passkey-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
 }
 
 .actions-section {

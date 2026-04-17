@@ -28,6 +28,7 @@ export interface UserInfo {
   nickname: string
   user_type: UserKind
   is_mfa: boolean
+  is_passkey: boolean
 }
 
 // 登录响应

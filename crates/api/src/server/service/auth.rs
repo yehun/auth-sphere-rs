@@ -182,7 +182,8 @@ impl AuthService {
                 username: session.username,
                 nickname: session.nickname,
                 user_type: session.user_type,
-                is_mfa: user.is_mfa
+                is_mfa: user.is_mfa,
+                is_passkey: user.is_passkey,
             },
         }
     }
@@ -199,7 +200,7 @@ impl AuthService {
         let mut conn = self.db.acquire().await?;
 
         // 查询用户
-        let user = User::get_by_username(&mut conn, username.to_string()).await?;
+        let user = User::get_by_username(&mut conn, username).await?;
         let user = match user {
             Some(u) => u,
             None => bail!("用户名或密码错误"),
@@ -301,7 +302,7 @@ impl AuthService {
         let mut tx = self.db.begin().await?;
         let conn = tx.acquire().await?;
 
-        if User::get_by_username(conn, username.to_string()).await?.is_some() {
+        if User::get_by_username(conn, username).await?.is_some() {
             bail!("用户名已存在");
         }
 

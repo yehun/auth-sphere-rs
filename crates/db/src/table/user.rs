@@ -36,6 +36,7 @@ pub struct User {
     pub nickname: String,
     pub username: String,
     pub is_mfa: bool,
+    pub is_passkey: bool,
     pub status: u8,
     pub create_at: Option<NaiveDateTime>,
     pub update_at: Option<NaiveDateTime>,
@@ -78,11 +79,13 @@ pub trait UserRepository<E: DatabaseExecutor>: Repository<E, User, UserId> {
 
     async fn update_mfa(executor: &mut E, id: UserId, active: bool) -> Result<u64, Error>;
 
+    async fn update_passkey(executor: &mut E, id: UserId, active: bool) -> Result<u64, Error>;
+
     async fn update_status(executor: &mut E, id: u64, status: UserStatus) -> Result<u64, Error>;
 
     async fn get_by_id(executor: &mut E, id: UserId) -> Result<Option<User>, Error>;
 
-    async fn get_by_username(executor: &mut E, username: String) -> Result<Option<User>, Error>;
+    async fn get_by_username(executor: &mut E, username: &str) -> Result<Option<User>, Error>;
 
     async fn list_search(executor: &mut E, search: UserSearch) -> Result<Vec<User>, Error>;
 

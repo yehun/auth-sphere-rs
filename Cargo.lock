@@ -443,10 +443,12 @@ dependencies = [
  "actix-web-validator",
  "anyhow",
  "auth-sphere-db",
+ "base64-url",
  "chrono",
  "clap",
  "config",
  "futures-util",
+ "hex",
  "lazy_static",
  "lib-mfa",
  "lib-redis",
@@ -516,6 +518,15 @@ name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
+
+[[package]]
+name = "base64-url"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb9fb9fb058cc3063b5fc88d9a21eefa2735871498a04e1650da76ed511c8569"
+dependencies = [
+ "base64 0.21.7",
+]
 
 [[package]]
 name = "base64ct"

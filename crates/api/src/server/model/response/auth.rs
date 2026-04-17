@@ -23,7 +23,8 @@ pub struct UserInfo {
     pub username: String,
     pub nickname: String,
     pub user_type: UserKind,
-    pub is_mfa: bool
+    pub is_mfa: bool,
+    pub is_passkey: bool
 }
 
 /// OTP 发送响应

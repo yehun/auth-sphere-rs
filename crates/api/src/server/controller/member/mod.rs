@@ -44,6 +44,8 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             .route("/register", web::post().to(login::register))
             .route("/otp/send", web::post().to(otp::send))
             .route("/otp/login", web::post().to(otp::login))
+            .route("/passkey/login/begin", web::post().to(passkey::login_begin))
+            .route("/passkey/login/complete", web::post().to(passkey::login_complete))
             .service(
                 web::scope("")
                     .wrap(from_fn(auth_middleware))
@@ -52,6 +54,9 @@ pub fn init(cfg: &mut web::ServiceConfig) {
                     .route("/mfa/generate", web::post().to(mfa::generate))
                     .route("/mfa/active", web::post().to(mfa::active))
                     .route("/mfa/deactive", web::post().to(mfa::deactive))
+                    .route("/passkey/deactive", web::post().to(passkey::deactive))
+                    .route("/passkey/register/begin", web::post().to(passkey::register_begin))
+                    .route("/passkey/register/complete", web::post().to(passkey::register_complete))
             )
     );
 }

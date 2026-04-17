@@ -1,82 +1,184 @@
-use actix_web::{web, Responder};
+use actix_http::HttpMessage;
+use actix_web::{web, Responder, HttpResponse};
 use actix_web_validator::Json;
-use webauthn_rs::prelude::Url;
-use auth_sphere_db::table::user::User;
+use tracing::{debug, error};
+use auth_sphere_db::table::user::{UserKind};
 use crate::config::AppState;
-use crate::server::model::request::MfaLoginRequest;
+use crate::server::middleware::Authorization;
+use crate::server::model::request::{PasskeyRegisterBeginRequest, PasskeyRegisterCompleteRequest, PasskeyLoginBeginRequest, PasskeyLoginCompleteRequest};
 use crate::server::model::response::base::result::ResponseResult;
 
+/// 开始 Passkey 注册
 pub async fn register_begin(
     state: web::Data<AppState>,
-    request: actix_web::HttpRequest,
-    body: Json<MfaLoginRequest>,
+    req: Json<PasskeyRegisterBeginRequest>,
 ) -> impl Responder {
-    // let user = state.user_store.get_or_create_user(&body.username).await?;
-    // let (creation_challenge, user_id) = state.webauthn
-    //     .start_passkey_registration(
-    //         user.get_id(),
-    //         &user.get_name(),
-    //         &user.get_display_name(),
-    //         None,
-    //     )
-    //     .map_err(|_| HttpError::InternalError)?;
-    // 将挑战与用户 ID 存入 session 以便后续验证
-    // state.session_store.insert(user_id, creation_challenge);
-    // HttpResponse::Ok().json(creation_challenge)
-    ResponseResult::<()>::fail_with_message("登录失败").response()
+    debug!("Passkey register begin request: {:?}", req);
+    
+    // 根据用户名查找用户
+    let user = match state.user_service.get_by_username(UserKind::Member, &req.username).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return ResponseResult::<()>::fail_with_message("用户不存在").response(),
+        Err(e) => {
+            error!("Failed to get user: {:?}", e);
+            return ResponseResult::<()>::fail_with_message("获取用户信息失败").response();
+        }
+    };
+
+    // 开始注册流程
+    match state.passkey_service.register_begin(
+        &req.username,
+        user.id,
+        &user.nickname,
+    ).await {
+        Ok(challenge) => {
+            debug!("Passkey registration challenge: {:?}", challenge);
+            // 直接序列化为 JSON，webauthn-rs-proto 已经实现了正确的 Serialize
+            HttpResponse::Ok()
+                .content_type("application/json")
+                .json(challenge)
+        },
+        Err(e) => {
+            error!("Passkey register begin failed: {}", e);
+            ResponseResult::<()>::fail_with_message(&e).response()
+        }
+    }
 }
 
+/// 完成 Passkey 注册
 pub async fn register_complete(
     state: web::Data<AppState>,
-    request: actix_web::HttpRequest,
-    body: Json<MfaLoginRequest>,
+    req: Json<PasskeyRegisterCompleteRequest>,
 ) -> impl Responder {
-    // // 从 session 中取出之前存储的挑战和用户信息
-    // let (user_id, challenge) = state.session_store.get(&body.session_id)?;
-    // let user = state.user_store.get_user(user_id)?;
-    // // 完成注册验证
-    // let credential = state.webauthn
-    //     .finish_passkey_registration(&challenge, &body.credential, &user)
-    //     .map_err(|_| HttpError::InvalidRequest)?;
-    // // 将新凭证存储到数据库
-    // state.credential_store.add_credential(&user, credential).await?;
-    ResponseResult::<()>::fail_with_message("登录失败").response()
+    debug!("Passkey register complete request for user: {}", req.username);
+    
+    // 根据用户名查找用户
+    let user = match state.user_service.get_by_username(UserKind::Member, &req.username).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return ResponseResult::<()>::fail_with_message("用户不存在").response(),
+        Err(e) => {
+            error!("Failed to get user: {:?}", e);
+            return ResponseResult::<()>::fail_with_message("获取用户信息失败").response();
+        }
+    };
+
+    // 完成注册流程
+    match state.passkey_service.register_complete(
+        &req.username,
+        user.id,
+        req.credential.clone(),
+    ).await {
+        Ok(()) => ResponseResult::<()>::success().response(),
+        Err(e) => {
+            error!("Passkey register complete failed: {}", e);
+            ResponseResult::<()>::fail_with_message(&e).response()
+        }
+    }
 }
 
-
+/// 开始 Passkey 登录
 pub async fn login_begin(
     state: web::Data<AppState>,
-    request: actix_web::HttpRequest,
-    body: Json<MfaLoginRequest>,
+    req: Json<PasskeyLoginBeginRequest>,
 ) -> impl Responder {
-    // let user = state.user_store.get_user_by_name(&body.username)?;
-    // let allowed_credentials = state.credential_store.get_credentials(&user);
-    // let (request_challenge, user_id) = state
-    //     .webauthn
-    //     .start_passkey_authentication(&allowed_credentials, &user)
-    //     .map_err(|_| HttpError::InternalError)?;
-    // state.session_store.insert(user_id, request_challenge);
-    ResponseResult::<()>::fail_with_message("登录失败").response()
+    debug!("Passkey login begin request: {:?}", req);
+    
+    // 根据用户名查找用户
+    let user = match state.user_service.get_by_username(UserKind::Member, &req.username).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return ResponseResult::<()>::fail_with_message("用户不存在").response(),
+        Err(e) => {
+            error!("Failed to get user: {:?}", e);
+            return ResponseResult::<()>::fail_with_message("获取用户信息失败").response();
+        }
+    };
+
+    // 开始登录流程
+    match state.passkey_service.login_begin(
+        &req.username,
+        user.id,
+    ).await {
+        Ok(challenge) => {
+            debug!("Passkey login challenge: {:?}", challenge);
+            HttpResponse::Ok().json(challenge)
+        },
+        Err(e) => {
+            error!("Passkey login begin failed: {}", e);
+            ResponseResult::<()>::fail_with_message(&e).response()
+        }
+    }
 }
 
+/// 完成 Passkey 登录
 pub async fn login_complete(
     state: web::Data<AppState>,
     request: actix_web::HttpRequest,
-    body: Json<MfaLoginRequest>,
+    req: Json<PasskeyLoginCompleteRequest>,
 ) -> impl Responder {
-    // let (user_id, challenge) = state.session_store.get(&body.session_id)?;
-    // let user = state.user_store.get_user(user_id)?;
-    // let mut credentials = state.credential_store.get_credentials(&user);
-    // // 完成认证验证
-    // let auth_result = state
-    //     .webauthn
-    //     .finish_passkey_authentication(&challenge, &body.credential, &mut credentials, &user)
-    //     .map_err(|_| HttpError::InvalidRequest)?;
-    // // 更新凭证的签名计数器（重要！用于防重放攻击）
-    // state.credential_store.update_credential_sign_count(auth_result).await?;
-    // // 发放 JWT 或建立 Session
-    // let token = create_jwt(&user);
-    ResponseResult::<()>::fail_with_message("登录失败").response()
-}
+    debug!("Passkey login complete request for user: {}", req.username);
+    
+    // 根据用户名查找用户
+    let user = match state.user_service.get_by_username(UserKind::Member, &req.username).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return ResponseResult::<()>::fail_with_message("用户不存在").response(),
+        Err(e) => {
+            error!("Failed to get user: {:?}", e);
+            return ResponseResult::<()>::fail_with_message("获取用户信息失败").response();
+        }
+    };
 
+    // 完成登录流程
+    match state.passkey_service.login_complete(
+        &req.username,
+        user.id,
+        req.credential.clone(),
+    ).await {
+        Ok(()) => {
+            // 生成 token 并返回用户信息
+            use actix_http::HttpMessage;
+            use crate::server::middleware::DeviceType;
+            
+            let ext = request.extensions();
+            let device = ext.get::<DeviceType>()
+                .unwrap_or(&DeviceType::Unknown)
+                .clone();
+            let user_device = device.into();
+            
+            // 创建会话
+            match state.auth_service.create_session(&user, user_device).await {
+                Ok(session) => {
+                    let login_response = state.auth_service.session_to_login_response(session, &user);
+                    ResponseResult::success_with_data(login_response).response()
+                },
+                Err(e) => {
+                    error!("Failed to create session: {:?}", e);
+                    ResponseResult::<()>::fail_with_message("生成令牌失败").response()
+                }
+            }
+        },
+        Err(e) => {
+            error!("Passkey login complete failed: {}", e);
+            ResponseResult::<()>::fail_with_message(&e).response()
+        }
+    }
+}
+pub async fn deactive(
+    state: web::Data<AppState>,
+    request: actix_web::HttpRequest,
+) -> impl Responder {
+    let ext = request.extensions();
+    let token = match ext.get::<Authorization>() {
+        Some(t) => &t.0,
+        None => {
+            return ResponseResult::<()>::fail_with_message("请先登陆").response();
+        },
+    };
+    let Ok(user) = state.user_service.current_user(UserKind::Member, token).await else {
+        return ResponseResult::<()>::fail_with_message("获取用户信息失败").response();
+    };
+    if let Err(e) = state.passkey_service.deactived(user.id).await {
+        return ResponseResult::<()>::fail_with_message(&format!("关闭PassKey失败: {e}")).response();
+    }
+    ResponseResult::<()>::success().response()
+}
 

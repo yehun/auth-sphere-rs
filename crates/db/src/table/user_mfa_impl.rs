@@ -61,7 +61,7 @@ impl<E: DatabaseExecutor> UserMfaRepository<E> for UserMfa {
     }
 
     async fn delete_by_user_id(executor: &mut E, user_id: UserId) -> Result<u64, Error> {
-        let sql = format!("update {} set deleted=0 where deleted=1 and user_id=?", TABLE_NAME);
+        let sql = format!("update {} set deleted=1 where deleted=0 and user_id=?", TABLE_NAME);
         let params: Vec<Param> = vec![user_id.into()];
         debug!("user_mfa delete_by_user_id sql={sql}, param={params:?}");
         Self::execute(executor, &sql, Some(&params)).await.map(|r| {
@@ -70,7 +70,7 @@ impl<E: DatabaseExecutor> UserMfaRepository<E> for UserMfa {
     }
 
     async fn delete(executor: &mut E, id: u64) -> Result<u64, Error> {
-        let sql = format!("update {} set deleted=0 where deleted=1 and id=?", TABLE_NAME);
+        let sql = format!("update {} set deleted=1 where deleted=0 and id=?", TABLE_NAME);
         let params: Vec<Param> = vec![id.into()];
         debug!("user_mfa delete sql={sql}, param={params:?}");
         Self::execute(executor, &sql, Some(&params)).await.map(|r| {

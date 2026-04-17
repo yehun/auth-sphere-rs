@@ -68,3 +68,31 @@ pub struct MfaLoginRequest {
     #[validate(length(min = 6, max = 6))]
     pub code: String,
 }
+
+/// Passkey 注册开始请求
+#[derive(Debug, Clone, Validate, Deserialize, Serialize)]
+pub struct PasskeyRegisterBeginRequest {
+    #[validate(length(min = 1, message = "用户名不能为空"))]
+    pub username: String,
+}
+
+/// Passkey 注册完成请求
+#[derive(Debug, Clone, Validate, Deserialize, Serialize)]
+pub struct PasskeyRegisterCompleteRequest {
+    pub username: String,
+    pub credential: serde_json::Value,
+}
+
+/// Passkey 登录开始请求
+#[derive(Debug, Clone, Validate, Deserialize, Serialize)]
+pub struct PasskeyLoginBeginRequest {
+    #[validate(length(min = 1, message = "用户名不能为空"))]
+    pub username: String,
+}
+
+/// Passkey 登录完成请求
+#[derive(Debug, Clone, Validate, Deserialize, Serialize)]
+pub struct PasskeyLoginCompleteRequest {
+    pub username: String,
+    pub credential: serde_json::Value,
+}

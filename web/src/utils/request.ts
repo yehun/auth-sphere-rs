@@ -41,26 +41,30 @@ service.interceptors.response.use(
     const res = response.data
     console.log('[Response] URL:', response.config.url, '| Status:', response.status, '| Data:', res)
     
-    // 如果返回的状态码不是 0，说明接口有问题
-    if (res.code !== 0) {
-      ElMessage.error(res.message || '请求失败')
-      
-      // 401: 未授权，需要重新登录
-      if (res.code === 401) {
-        const userKind = localStorage.getItem('user_kind')
-        localStorage.removeItem('token')
-        localStorage.removeItem('user_kind')
-        localStorage.removeItem('user_info')
+    // 如果配置了 skipCodeCheck，则直接返回响应（用于 WebAuthn 等特殊 API）
+    const skipCodeCheck = (response.config as any).skipCodeCheck
+    if (!skipCodeCheck) {
+      // 如果返回的状态码不是 0，说明接口有问题
+      if (res.code !== 0) {
+        ElMessage.error(res.message || '请求失败')
         
-        // 根据用户类型跳转到对应的登录页面
-        if (userKind) {
-          window.location.href = `/#/login/${userKind}`
-        } else {
-          window.location.href = '/#/'
+        // 401: 未授权，需要重新登录
+        if (res.code === 401) {
+          const userKind = localStorage.getItem('user_kind')
+          localStorage.removeItem('token')
+          localStorage.removeItem('user_kind')
+          localStorage.removeItem('user_info')
+          
+          // 根据用户类型跳转到对应的登录页面
+          if (userKind) {
+            window.location.href = `/#/login/${userKind}`
+          } else {
+            window.location.href = '/#/'
+          }
         }
+        
+        return Promise.reject(new Error(res.message || '请求失败'))
       }
-      
-      return Promise.reject(new Error(res.message || '请求失败'))
     }
     
     return response

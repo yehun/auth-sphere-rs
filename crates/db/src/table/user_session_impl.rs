@@ -77,7 +77,7 @@ impl<E: DatabaseExecutor> UserSessionRepository<E> for UserSession {
     }
 
     async fn delete(executor: &mut E, id: u64) -> Result<u64, Error> {
-        let sql = format!("update {} set deleted=1 where id=?", TABLE_NAME);
+        let sql = format!("update {} set deleted=1 where deleted=0 and id=?", TABLE_NAME);
         let params: Vec<Param> = vec![id.into()];
         debug!("user_session delete sql={sql}, param={params:?}");
         Self::execute(executor, &sql, Some(&params)).await.map(|r| {

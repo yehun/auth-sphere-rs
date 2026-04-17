@@ -62,10 +62,10 @@ where
 #[allow(dead_code)]
 impl<T> ResponseResult<T>
 where
-    T: Clone + Default
+    T: Clone
 {
     pub fn success() -> ResponseResult<T> {
-        Self::success_with_data(Default::default())
+        Self::success_with_message("success")
     }
 
     pub fn success_with_message(message: &str) -> ResponseResult<T> {

@@ -115,6 +115,18 @@ impl<E: DatabaseExecutor> UserRepository<E> for User {
         })?
     }
 
+    async fn update_passkey(executor: &mut E, id: UserId, active: bool) -> Result<u64, Error> {
+        let sql = format!("update {} set is_passkey=? where deleted=0 and id=?", TABLE_NAME);
+        let params: Vec<Param> = vec![
+            active.into(),
+            id.into()
+        ];
+        debug!("sql={sql}, param={params:?}");
+        Self::execute(executor, &sql, Some(&params)).await.map(|r| {
+            Ok(r.rows_affected())
+        })?
+    }
+
     async fn update_status(executor: &mut E, id: u64, status: UserStatus) -> Result<u64, Error> {
         let sql = format!("update {} set status=? where deleted=0 and id=?", TABLE_NAME);
         let params: Vec<Param> = vec![
@@ -135,7 +147,7 @@ impl<E: DatabaseExecutor> UserRepository<E> for User {
         executor.first(&sql, Some(&params)).await
     }
 
-    async fn get_by_username(executor: &mut E, username: String) -> Result<Option<User>, Error> {
+    async fn get_by_username(executor: &mut E, username: &str) -> Result<Option<User>, Error> {
         let sql = format!("select * from {} where deleted=0 and username=?", TABLE_NAME);
         let params: Vec<Param> = vec![username.into()];
         debug!("sql={sql}, param={params:?}");

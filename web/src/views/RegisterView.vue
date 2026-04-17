@@ -97,9 +97,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { register } from '@/api/auth'
+import { register, passkeyRegisterBegin, passkeyRegisterComplete } from '@/api/auth'
+import { startRegistration } from '@simplewebauthn/browser'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
@@ -153,7 +154,27 @@ async function handleRegister() {
         phone: registerForm.value.phone || undefined
       })
       
-      ElMessage.success('注册成功，请登录')
+      ElMessage.success('注册成功')
+      
+      // 询问用户是否要设置 Passkey
+      try {
+        await ElMessageBox.confirm(
+          '是否现在设置 Passkey？Passkey 可以提供更安全、便捷的无密码登录体验。',
+          '设置 Passkey',
+          {
+            confirmButtonText: '设置 Passkey',
+            cancelButtonText: '稍后再说',
+            type: 'info'
+          }
+        )
+        
+        // 用户选择设置 Passkey
+        await setupPasskey(registerForm.value.username, registerForm.value.user_type)
+      } catch (error) {
+        // 用户取消，直接跳转到登录页
+        console.log('User skipped passkey setup')
+      }
+      
       router.push('/')
     } catch (error) {
       console.error('Register error:', error)
@@ -161,6 +182,48 @@ async function handleRegister() {
       loading.value = false
     }
   })
+}
+
+// 设置 Passkey
+async function setupPasskey(username: string, userType: string) {
+  try {
+    // 1. 开始 Passkey 注册流程
+    const response = await passkeyRegisterBegin(userType as any, {
+      username
+    })
+    
+    console.log('[Passkey] Registration challenge received:', response)
+    
+    // webauthn-rs 返回的格式是 { publicKey: {...} }
+    // @simplewebauthn/browser 需要直接使用 publicKey 的内容
+    const options = response.publicKey || response
+    
+    console.log('[Passkey] Using options:', options)
+    
+    // 2. 调用浏览器 WebAuthn API 进行注册
+    const credential = await startRegistration(options)
+    console.log('[Passkey] Registration completed:', credential)
+    
+    // 3. 完成 Passkey 注册
+    const completeResponse = await passkeyRegisterComplete(userType as any, {
+      username,
+      credential
+    })
+    
+    if (completeResponse.code !== 200) {
+      ElMessage.warning(completeResponse.message || 'Passkey 注册失败')
+      return
+    }
+    
+    ElMessage.success('Passkey 设置成功！')
+  } catch (error: any) {
+    console.error('Passkey registration error:', error)
+    if (error.name === 'NotAllowedError') {
+      ElMessage.warning('用户取消了 Passkey 设置')
+    } else {
+      ElMessage.warning(error.message || 'Passkey 设置失败')
+    }
+  }
 }
 
 function goHome() {

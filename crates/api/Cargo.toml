@@ -28,8 +28,10 @@ actix-cors = { version = "0.7.0" }
 actix-files = { version = "0.6" }
 validator = { version = "0.18.1", features = ["derive"] }
 actix-web-validator = { version = "6.0.0" }
-webauthn-rs = "0.5.4"
+webauthn-rs = { version = "0.5.4", features = ["danger-allow-state-serialisation"] }
 rand = { version = "0.8" }
+base64-url = "2.0.0"
+hex = "0.4.3"
 
 md5 = "0.8.0"
 clap = { version = "4.0.13", features = ["derive"] }

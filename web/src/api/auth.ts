@@ -156,3 +156,73 @@ export function deactivateMfa(): Promise<{ code: number; message: string; data: 
     method: 'post'
   }).then((res) => res.data)
 }
+
+/**
+ * Passkey 注册 - 开始
+ */
+export function passkeyRegisterBegin(
+  userKind: UserKind,
+  data: { username: string }
+): Promise<any> {
+  // @ts-ignore - 自定义配置项，用于跳过响应 code 检查
+  return request({
+    url: `/${userKind}/passkey/register/begin`,
+    method: 'post',
+    data,
+    skipCodeCheck: true
+  }).then((res) => res.data)
+}
+
+/**
+ * Passkey 注册 - 完成
+ */
+export function passkeyRegisterComplete(
+  userKind: UserKind,
+  data: { username: string; credential: any }
+): Promise<{ code: number; message: string; data: any }> {
+  return request({
+    url: `/${userKind}/passkey/register/complete`,
+    method: 'post',
+    data
+  }).then((res) => res.data)
+}
+
+/**
+ * Passkey 登录 - 开始
+ */
+export function passkeyLoginBegin(
+  userKind: UserKind,
+  data: { username: string }
+): Promise<any> {
+  // @ts-ignore - 自定义配置项，用于跳过响应 code 检查
+  return request({
+    url: `/${userKind}/passkey/login/begin`,
+    method: 'post',
+    data,
+    skipCodeCheck: true
+  }).then((res) => res.data)
+}
+
+/**
+ * Passkey 登录 - 完成
+ */
+export function passkeyLoginComplete(
+  userKind: UserKind,
+  data: { username: string; credential: any }
+): Promise<{ code: number; message: string; data: any }> {
+  return request({
+    url: `/${userKind}/passkey/login/complete`,
+    method: 'post',
+    data
+  }).then((res) => res.data)
+}
+
+/**
+ * 关闭 Passkey
+ */
+export function deactivatePasskey(userKind: UserKind): Promise<{ code: number; message: string }> {
+  return request({
+    url: `/${userKind}/passkey/deactive`,
+    method: 'post'
+  }).then((res) => res.data)
+}

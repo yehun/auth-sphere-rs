@@ -1,6 +1,7 @@
 mod user;
 mod otp;
 mod login;
+mod passkey;
 
 use actix_http::body::{BoxBody, MessageBody};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
@@ -39,6 +40,11 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             .route("/login", web::post().to(login::login_with_password))
             .route("/otp/send", web::post().to(otp::send))
             .route("/otp/login", web::post().to(otp::login))
+            // Passkey 路由
+            .route("/passkey/register/begin", web::post().to(passkey::register_begin))
+            .route("/passkey/register/complete", web::post().to(passkey::register_complete))
+            .route("/passkey/login/begin", web::post().to(passkey::login_begin))
+            .route("/passkey/login/complete", web::post().to(passkey::login_complete))
             .service(
                 web::scope("")
                     .wrap(from_fn(auth_middleware))
