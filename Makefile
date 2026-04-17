@@ -1,0 +1,18 @@
+all:
+	@echo "run"
+	@echo "build"
+	@echo "build-release"
+	@echo "build-arm"
+	@echo "build-arm-release"
+	@echo "clean"
+
+run:
+	cargo run -p auth-sphere-api
+
+build:
+	cargo build -p auth-sphere-api
+
+build-release:
+	cargo build --release -p auth-sphere-api
+clean:
+	cross clean

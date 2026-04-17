@@ -1,0 +1,18 @@
+# Build outputs
+/dist
+/target
+
+# IDE
+.idea
+.vscode
+.DS_Store
+
+# Dependencies
+node_modules
+
+# Frontend build output
+web/dist
+
+# Config
+*.toml
+Cargo.lock

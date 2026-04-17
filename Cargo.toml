@@ -1,0 +1,35 @@
+[workspace]
+members = [
+    "crates/mfa",
+    "crates/sqlx",
+    "crates/redis",
+    "crates/db",
+    "crates/api",
+]
+
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+authors = ["Yehun <yehunhk@163.com>"]
+
+[workspace.dependencies]
+lib-mfa = { path = "crates/mfa" }
+lib-sqlx = { path = "crates/sqlx" }
+lib-redis = { path = "crates/redis" }
+auth-sphere-db = { path = "crates/db"}
+
+anyhow = { version = "1.0.87" }
+regex = "1.11.1"
+thiserror = { version = "2.0" }
+chrono = { version = "0.4.40", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.140" }
+tracing = { version = "0.1.41" }
+tracing-subscriber = { version = "0.3.18", features = ["local-time"] }
+uuid = { version = "1.12", features = ["serde", "v4"] }
+tokio = { version = "1.43", features = ["full"] }
+
+
+

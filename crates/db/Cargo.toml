@@ -1,0 +1,24 @@
+[package]
+name = "auth-sphere-db"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_repr = "0.1"
+chrono.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3.18", features = ["local-time"] }
+lib-sqlx.workspace = true
+sqlx = { version = "0.8.5", features = [
+    "runtime-tokio-rustls",
+    "macros", "chrono",
+    "bigdecimal", "json", "uuid",
+    "sqlite"
+] }
+strum = { version = "0.20.0" }
+strum_macros = { version = "0.20.0" }

@@ -1,0 +1,24 @@
+[package]
+name = "lib-sqlx"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+tokio.workspace = true
+serde.workspace = true
+chrono.workspace = true
+sqlx = { version = "0.8.5", features = [
+    "runtime-tokio-rustls",
+    "macros",
+    "chrono", "bigdecimal",
+    "json", "uuid",
+] }
+futures-core = { version = "0.3.31" }
+
+[features]
+default = [ "sqlite" ]
+sqlite = [ "sqlx/sqlite" ]
+mysql = [ "sqlx/mysql" ]
+#postgres = [ "sqlx/postgres" ]
